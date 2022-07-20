@@ -22,6 +22,11 @@ import io
 
 
 def main_export():
+    """ 
+        Export policies from source_fsm: 
+        get a list of enabled policies and iterate on every policy to GET the policies and rules,
+        severity and action.
+    """
     # configure the logger
     logging.basicConfig(filename="export-api.log",
                         format='%(asctime)s %(message)s',
@@ -72,21 +77,22 @@ def main_export():
     # get rule exceptions
     rule_exceptions = get_policies.get_all_exceptions(source_token, source_fsm_server, policy_type)
 
-    """ 
-        Export policies from source_fsm: 
-        get a list of enabled policies and iterate on every policy to GET the policies and rules,
-        severity and action.
-    """
-
     # print total enabled policies on source fsm
     total_enabled_policies = len(enabled_policies['enabled_policies'])
     print('\nStarting to export ' + policy_type + ' policies from FSM')
     print('--------------------------------------------------------')
     print('Total ' + policy_type + ' policies enabled on source FSM: ' + str(total_enabled_policies))
 
+    # Save policy list to disk 
+    print('\nSaving enabled policies to disk')
+    os.makedirs('json', exist_ok=True)
+    write_to_file('json/' +  'enabled_policies.json', enabled_policies)
+    print('--------------------------------------------------------')
+
     # export polices and rules from source fsm, itterate over the list of policies and refresh token along the way
     for i in enabled_policies['enabled_policies']:
         notsupported_policies = 0
+        failed_to_export_policies = 0
         policy_name = i
 
         # check run time
@@ -104,77 +110,66 @@ def main_export():
             continue
 
         # Export policies and rules from source fsm
-        if policy_type == 'DLP':
-            print('\nExporting ' + policy_type + ' DLP policy: ' + policy_name)
-            print('--------------------------------------------------------')
-            rules_classifiers_output = get_policies.get_rules_classifiers(source_token, source_fsm_server, policy_name)
-            severity_action_output = get_policies.get_severity_action(source_token, source_fsm_server, policy_name)
-            source_destination_output = get_policies.get_source_destination(source_token, source_fsm_server, policy_name)
-            print('\nSaving ' + policy_type + ' DLP policy: ' + policy_name)
-            print('--------------------------------------------------------')
-        else:
-            print('\nExporting ' + policy_type + ' Discovery policy: ' + policy_name)
-            print('--------------------------------------------------------')
-            rules_classifiers_output = get_policies.get_rules_classifiers(source_token, source_fsm_server, policy_name)
-            severity_action_output = get_policies.get_severity_action(source_token, source_fsm_server, policy_name)
+        print('\nExporting ' + policy_type + ' policy: ' + policy_name)
+        rules_classifiers_output = get_policies.get_rules_classifiers(source_token, source_fsm_server, policy_name)
 
-            print('\nSaving ' + policy_type + ' Discovery policy: ' + policy_name)
-            print('--------------------------------------------------------')
+        # If the GET Fails them mark it and skip to the next policy. 
+        if (rules_classifiers_output == {}):
+            failed_to_export_policies += 1
+            print('Failed to GET policy:' + policy_name)
+            continue 
+
+        severity_action_output = get_policies.get_severity_action(source_token, source_fsm_server, policy_name)
+        if policy_type == 'DLP':
+            source_destination_output = get_policies.get_source_destination(source_token, source_fsm_server, policy_name)
+        else:  # Discovery policy
+            pass
+        print('--------------------------------------------------------')
 
         # Save exported json files to disk 
-
-        os.makedirs('json', exist_ok=True)
-
-        write_to_file(policy_name, 'json/' + policy_name + '_rules_classifiers.json', rules_classifiers_output)
-        write_to_file(policy_name, 'json/' + policy_name + '_sev_action.json', severity_action_output)
-        write_to_file(policy_name, 'json/' + policy_name + '_source_destination.json', source_destination_output)
-        write_to_file(policy_name, 'json/' +  'enabled_policies.json', enabled_policies)
-
-#        f = open('json/' + policy_name + '_rules_classifiers.json', 'w', encoding='utf-8')
-#        json.dump(rules_classifiers_output, f, ensure_ascii=False, indent=4)
-
-#        f = open('json/' + policy_name + '_sev_action.json', 'w', encoding='utf-8')
-#        json.dump(severity_action_output, f, ensure_ascii=False, indent=4)
-
-#        f = open('json/' + policy_name + '_source_destination.json', 'w', encoding='utf-8')
-#        json.dump(source_destination_output, f, ensure_ascii=False, indent=4)
-
-#        f = open('json/' +  'enabled_policies.json', 'w', encoding='utf-8')
-#        json.dump(enabled_policies, f, ensure_ascii=False, indent=4)
+        print('\nSaving ' + policy_type + '  policy: ' + policy_name)
+        write_to_file('json/' + policy_name + '_rules_classifiers.json', rules_classifiers_output)
+        write_to_file('json/' + policy_name + '_sev_action.json', severity_action_output)
+        if policy_type == 'DLP':
+            write_to_file('json/' + policy_name + '_source_destination.json', source_destination_output)
+        print('--------------------------------------------------------')
 
     # export rule exceptions if they exist
-    if (len(rule_exceptions) == 0):
-        pass
-    else:
-        print('\Exporting rule exceptions')
+    if (len(rule_exceptions) > 0):
+
+        # Save policy exceptions to disk 
+        print('\nSaving exception list to disk')
+        write_to_file('json/' +  'exceptions.json', rule_exceptions)
+        print('--------------------------------------------------------')
+        
+        print('\Exporting ' + policy_name + ' rule exceptions')
         print('--------------------------------------------------------')
         for i in rule_exceptions['exception_rules']:
             rule_name = i['rule_name']
             rule_exception_output = get_policies.get_rule_exception(source_token, source_fsm_server, policy_type,rule_name)
-            f = open('json/' + policy_name + '_exception_rules.json', 'w', encoding='utf-8')
-            json.dump(rule_exception_output, f, ensure_ascii=False, indent=4)
+            #f = open('json/' + policy_name + '_exception_rules.json', 'w', encoding='utf-8')
+            #json.dump(rule_exception_output, f, ensure_ascii=False, indent=4)
+            write_to_file('json/' + policy_name + '_exception_rules.json', rule_exception_output)
                                                                     
+
     # print execution time in seconds
-    print('\nExporting policies completed')
-    print('--------------------------------------------------------')
-    #total_policies_exported = total_enabled_policies - notsupported_policies
-    #print('Total policies exported: ' + str(total_policies_exported))
+    print('\nExport task completed:')
+    print('Total policies enabled:      ' + str(total_enabled_policies))
+    print('Total policies exported:     ' + str(total_enabled_policies - notsupported_policies - failed_to_export_policies))
+    print('Total unsupported policies:  ' + str(notsupported_policies))
+    print('Total failed to export:      ' + str(failed_to_export_policies))
     format_sec = "{:.2f}".format(time.time() - start_time)
     print("Total run time: " + str(format_sec) + ' seconds')
+    print('--------------------------------------------------------')
+
 #end main export
 
-def write_to_file(policy_name, filename, data):
+
+def write_to_file(filename, data):
     os.makedirs('json', exist_ok=True)
-#    f = open('json/' + policy_name + '_rules_classifiers.json', 'w', encoding='utf-8')
-#    json.dump(data, f, ensure_ascii=False, indent=4)
     # Write JSON file
     with io.open(filename, 'w', encoding='utf8') as outfile:
         json.dump(data, outfile, ensure_ascii=False, indent=4)
-#        str_ = json.dumps(data,
-#                        indent=4, sort_keys=True,
-#                        separators=(',', ': '), ensure_ascii=False)
-#        outfile.write(str_)
-
 
 def main():
     main_export() # export policies from FSM

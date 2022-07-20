@@ -2,14 +2,6 @@
 common classes for all scripts
 ==============================
 
-
-Modified version: export_policies_to_file_cli
-Author: Eran Amir (July-22) 
-modified version to export all policies to files.
-
-===================================================
-Original code and documentations below.
-
 Author: Elad Elkes (June-22)
  This script is used to import and export policies from source to target fsm. It usesDLP policy management REST API
  to pull policy configuration from source FSM and create including rules, classifiers,
@@ -42,9 +34,12 @@ Author: Elad Elkes (June-22)
 
 Updated: 
 
+Modified version: export_policies_to_file_cli
+Author: Eran Amir (July-22) 
+Modified @Elad's version to seperate import and export policies to files.
+
 """
 
-import argparse
 import json
 import logging
 import time
@@ -55,9 +50,7 @@ from os import path
 
 
 # suppress ssl warning message
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 
 class Auth:
     """ Create Authentication tokens"""
@@ -104,6 +97,7 @@ class GetPolicies:
         self.logger = logger
 
     def get_policy_list(self, source_token, source_fsm_server, policy_type):
+        """ First task is to get a list of all the policies availble"""
 
         # build the request to get list of enabled policies
         try:
@@ -114,32 +108,36 @@ class GetPolicies:
             self.logger.info("Sending a request to get list of enabled policies")
             r = requests.get(url, headers=headers, verify=False)
             res = r.text
-            self.logger.info("Raw Response is" + res)
             res = res.replace('\n',"")
-            self.logger.info("Second Response is" + res)
-
+            self.logger.info(" Response is" + res)
             policies_response = json.loads(res)
             return policies_response
 
-        except Exception:
+        except requests.exceptions.Timeout:
+            self.logger.error("Timeout request for policy")
+            exit()
+        except:
             print("Failed to send the request to get list of enabled policies to: " + url)
-            self.logger.error("Failed to send the request to get list of enabled policies to " + url)
             exit()
 
 
-    # TODO consolidate / refactor the next functions to a single one
     # URL encode the policy name
     def get_policy_details(self, source_token, source_fsm_server, policy_name, request_type):
+        """ Retrieve Policy attributes from FSM
+            use request_type for URL manipulation
+         """
         # build the request
         #policy_name_encoded = urllib3.parse.quote(policy_name)   TODO test if we need to encode for policy name with spaces and remove if not. 
         #url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name_encoded}'
         url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name}'
 
         headers = {'Authorization': f'Bearer {source_token}', 'Content-Type': 'application/json'}
-        print('GET rules and classifiers from: ' + source_fsm_server + ', policy:' + policy_name + "+" + request_type)
+        self.logger.info('GET rules and classifiers from: ' + source_fsm_server + ', policy:' + policy_name + "+" + request_type)
         try:
           # send api request to get the rules and classifiers
             r = requests.get(url, headers=headers, verify=False)
+        except requests.exceptions.Timeout:
+            self.logger.error("Timeout request for policy")
         except Exception as ex:
             print('Failed to GET policy:' + policy_name + "+" + request_type)
             print(r)
@@ -147,16 +145,22 @@ class GetPolicies:
             return {} #empty dictionary
 
         res = r.text
-        res = res.replace('\n',"")
-        self.logger.info("Response is" + res)
+        if (r.status_code > 200): # something bad happened
+            #res = res.replace('\n',"")
+            self.logger.info("Response is:" + res)
+            print('Failed to GET policy:' + policy_name)
+            print("Request returned with HTTP code" + str(r.status_code))
+            return {}
+
         policies_response = json.loads(res)
         json_format_rules_classifiers = json.dumps(policies_response, indent=4)
         return json_format_rules_classifiers
+        # TODO: should retgurn the policy as JSON in dictionary format - why are we getting a string?
 
 
 # Old GET requestssss TODO: redirect to the new policy
 
-    def get_rules_classifiers(self, source_token, source_fsm_server, policy_name):
+    def get_rules_classifiers___old_version(self, source_token, source_fsm_server, policy_name):
 
         # build the request
         url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules?policyName={policy_name}'
@@ -167,17 +171,33 @@ class GetPolicies:
             r = requests.get(url, headers=headers, verify=False)
             res = r.text
             self.logger.info("\nRaw Response is" + res)
-            res = res.replace('\n',"")
-            self.logger.info("\nSecond Response is" + res)            
+         
             policies_response = json.loads(res)
             json_format_rules_classifiers = json.dumps(policies_response, indent=4)
             return json_format_rules_classifiers
         except Exception:
-            print('Failed to GET policy:' + policy_name)
             print(res)
             return {}
 
+
+    def get_rules_classifiers(self, source_token, source_fsm_server, policy_name):
+        """ get the policy definition, classifiers and conditions"""
+        rules_classifiers_dict = GetPolicies.get_policy_details(self, source_token, source_fsm_server, policy_name, "")
+        return rules_classifiers_dict
+
+
     def get_severity_action(self, source_token, source_fsm_server, policy_name):
+        """ get the policy severity and action plan """
+        sev_action_dict = GetPolicies.get_policy_details(self, source_token, source_fsm_server, policy_name, "/severity-action")
+        return sev_action_dict
+
+
+    def get_source_destination(self, source_token, source_fsm_server, policy_name):
+        """ get the policy source and destination - for DLP but not discovery policies """
+        src_dst_dict = GetPolicies.get_policy_details(self, source_token, source_fsm_server, policy_name, "/source-destination")
+        return src_dst_dict
+
+    def get_severity_action__old(self, source_token, source_fsm_server, policy_name):
 
         # build the request
         url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules/severity-action?policyName={policy_name}'
@@ -197,7 +217,7 @@ class GetPolicies:
             print(res)
             return {}            
 
-    def get_source_destination(self, source_token, source_fsm_server, policy_name):
+    def get_source_destination___old(self, source_token, source_fsm_server, policy_name):
 
         # build the request
         url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules/source-destination?policyName={policy_name}'
@@ -214,7 +234,7 @@ class GetPolicies:
             return json_format_source_destination
         except Exception:
             print('Failed to GET policy:' + policy_name)
-            print(res)
+            print("Request returned with HTTP code" + str(r.status_code))
             return {}   
 
     def get_all_exceptions(self, source_token, source_fsm_server, policy_type):
