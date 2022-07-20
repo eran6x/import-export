@@ -1,0 +1,6 @@
+.vscode
+__pycache__
+data.json
+*.log
+json
+tester.py
