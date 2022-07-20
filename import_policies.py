@@ -127,11 +127,17 @@ def main_import():
             source_destination_output = common.GetPoliciesFromFile.get_source_destination(logger, policy_name)
             print('\nImporting to FSM:' + policy_type + '  policy: ' + policy_name)
             print('--------------------------------------------------------')
-            common.PostPolicies.post_rules_classifiers(target_token, target_fsm_server, rules_classifiers_output, policy_name)
-            common.PostPolicies.post_severity_action(target_token, target_fsm_server, severity_action_output, policy_name)
-            common.PostPolicies.post_source_destination(target_token, target_fsm_server, source_destination_output,
+            return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
+            if not (return_status > 200 ): # 200 OK
+                common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)
+                common.PostPolicies.post_source_destination(logger, target_token, target_fsm_server, source_destination_output,
                                                  policy_name)
-        else:
+            else: 
+                print('\nImport ' + policy_name + ' FAILED.\nHTTP request returned with status code:' + str(return_status))
+                print('See log for details')
+                print('--------------------------------------------------------')
+
+        else: # Discovery Policy
             print('\nLoading ' + policy_type + ' policy: ' + policy_name)
             print('--------------------------------------------------------')
             rules_classifiers_output = common.GetPoliciesFromFile.get_rules_classifiers(logger, policy_name)
@@ -139,8 +145,13 @@ def main_import():
 
             print('\nImporting to FSM: ' + policy_type + ' policy: ' + policy_name)
             print('--------------------------------------------------------')
-            common.PostPolicies.post_rules_classifiers(target_token, target_fsm_server, rules_classifiers_output, policy_name)
-            common.PostPolicies.post_severity_action(target_token, target_fsm_server, severity_action_output, policy_name)
+            return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
+            if not (return_status > 200 ): # 200 OK
+                common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)
+            else: 
+                print('\nImport ' + policy_name + ' FAILED.\nHTTP request returned with status code:' + str(return_status))
+                print('See log for details')
+                print('--------------------------------------------------------')             
 
     # import and export rule exceptions if they exist
     if len(rule_exceptions) == 0:
