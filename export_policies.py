@@ -74,9 +74,6 @@ def main_export():
     # get enabled policies
     enabled_policies = get_policies.get_policy_list(source_token, source_fsm_server, policy_type)
 
-    # get rule exceptions
-    rule_exceptions = get_policies.get_all_exceptions(source_token, source_fsm_server, policy_type)
-
     # print total enabled policies on source fsm
     total_enabled_policies = len(enabled_policies['enabled_policies'])
     print('\nStarting to export ' + policy_type + ' policies from FSM')
@@ -87,6 +84,15 @@ def main_export():
     print('\nSaving enabled policies to disk')
     os.makedirs('json', exist_ok=True)
     write_to_file('json/' +  'enabled_policies.json', enabled_policies)
+    print('--------------------------------------------------------')
+
+
+    # get rule exceptions
+    rule_exceptions = get_policies.get_all_exceptions(source_token, source_fsm_server, policy_type)
+
+    # Save policy list to disk 
+    print('\nSaving exceptions file to disk')
+    write_to_file('json/' +  'exceptions.json', rule_exceptions)
     print('--------------------------------------------------------')
 
     # export polices and rules from source fsm, itterate over the list of policies and refresh token along the way
@@ -149,8 +155,7 @@ def main_export():
             rule_exception_output = get_policies.get_rule_exception(source_token, source_fsm_server, policy_type,rule_name)
             #f = open('json/' + policy_name + '_exception_rules.json', 'w', encoding='utf-8')
             #json.dump(rule_exception_output, f, ensure_ascii=False, indent=4)
-            write_to_file('json/' + policy_name + '_exception_rules.json', rule_exception_output)
-                                                                    
+            write_to_file('json/' + policy_name + '_exception_rules.json', rule_exception_output)                                                             
 
     # print execution time in seconds
     print('\nExport task completed:')
