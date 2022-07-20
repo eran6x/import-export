@@ -4,20 +4,20 @@ import policies.
 ==============================
 
 """
-import common
-
 import argparse
 import json
 import logging
+#import os
 import time
-import requests
-import urllib3
-import os
 from os import path
 
-# suppress ssl warning message
+import requests
+#import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import common
+
+# suppress ssl warning message
+#urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 ####
 ## Import the policies from file to the new FSM

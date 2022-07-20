@@ -60,12 +60,15 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Auth:
+    """ Create Authentication tokens"""
 
     def __init__(self, logger):
+        """ init self"""
         self.logger = logger
 
     # get a token from fsm
     def get_access_token(self, fsm_server, user_name, user_password):
+        """ get access tokens for credentials"""
 
         self.logger.info("Requesting access token from: " + fsm_server)
         # build the request
@@ -96,7 +99,7 @@ class Auth:
 # end Auth
 
 class GetPolicies:
-
+    """ Retrieve policies and policies attributes from FSM server """
     def __init__(self, logger):
         self.logger = logger
 
@@ -128,18 +131,19 @@ class GetPolicies:
     # URL encode the policy name
     def get_policy_details(self, source_token, source_fsm_server, policy_name, request_type):
         # build the request
-        policy_name_encoded = urllib3.parse.quote(policy_name)
-        url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name_encoded}'
+        #policy_name_encoded = urllib3.parse.quote(policy_name)   TODO test if we need to encode for policy name with spaces and remove if not. 
+        #url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name_encoded}'
+        url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name}'
 
         headers = {'Authorization': f'Bearer {source_token}', 'Content-Type': 'application/json'}
         print('GET rules and classifiers from: ' + source_fsm_server + ', policy:' + policy_name + "+" + request_type)
         try:
           # send api request to get the rules and classifiers
             r = requests.get(url, headers=headers, verify=False)
-        except Exception as e:
+        except Exception as ex:
             print('Failed to GET policy:' + policy_name + "+" + request_type)
             print(r)
-            self.logger.error(repr(e))
+            self.logger.error(repr(ex))
             return {} #empty dictionary
 
         res = r.text
@@ -326,6 +330,7 @@ class GetPoliciesFromFile:
 
 #TODO: consolidate all the post methods into one.
 class PostPolicies:
+    """ Push Policies to FSM with RestAPI requests"""
 
     def __init__(self, logger):
         self.logger = logger
