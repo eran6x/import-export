@@ -310,7 +310,7 @@ class GetPoliciesFromFile:
 
     # get list of enabled policies
     def get_policy_list(logger, policy_type):
-        policies_response = GetPoliciesFromFile.load_file_from_disk(logger, "enabled_policies.json")
+        policies_response = GetPoliciesFromFile.load_file_from_disk(self, logger, "enabled_policies.json")
         return policies_response
 
 
