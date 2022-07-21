@@ -7,23 +7,22 @@ import policies.
 import argparse
 import json
 import logging
-#import os
 import time
 from os import path
-
 import requests
-#import urllib3
 
 import common
-
-# suppress ssl warning message
-#urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 ####
 ## Import the policies from file to the new FSM
 ##  
 ####
 def main_import():
+    """ 
+        import policies to target_fsm, get a list of enabled policies and iterate
+        on every policy to GET the policies and rules and POST them into the target fsm,
+        print to screen, later on write to the logs. 
+    """
     # configure the logger
     logging.basicConfig(filename="import-api.log",
                         format='%(asctime)s %(message)s',
@@ -34,12 +33,6 @@ def main_import():
 
     parser = argparse.ArgumentParser(description='This script imports policies to the target FSM.\nBoth DLP and Discovery policies are supported.')
 
-#    parser.add_argument('-s', '--source_fsm', nargs='?', const=1, type=str,
-#                        default='', help='Source FSM ip or hostname.', required=True)
-#    parser.add_argument('-su', '--source_user', nargs='?', const=1, type=str,
-#                        default='', help='Source FSM application user name.', required=True)
-#    parser.add_argument('-sp', '--source_pwd', nargs='?', const=1, type=str,
-#                        default='', help='Source FSM application user password.', required=True)
     parser.add_argument('-t', '--target_fsm', nargs='?', const=1, type=str,
                         default='', help='Target FSM ip or hostname.', required=True)
     parser.add_argument('-tu', '--target_user', nargs='?', const=1, type=str,
@@ -59,10 +52,10 @@ def main_import():
     # set start time to calculate the run time at the end of the run
     start_time = time.time()
 
-    # set the class
+    # init the classes for logger
     get_jwt = common.Auth(logger)
-    get_policies_from_file = common.GetPoliciesFromFile(logger)
-    post_policies = common.PostPolicies(logger)
+    common.GetPoliciesFromFile(logger)
+    common.PostPolicies(logger)
 
     # start to import  policies
     print('\nImporting ' + policy_type + ' Policies from local files')
@@ -71,20 +64,20 @@ def main_import():
     # get enabled policies
     enabled_policies = common.GetPoliciesFromFile.get_policy_list(logger, policy_type)
 
-    
-
     # get rule exceptions
     rule_exceptions = common.GetPoliciesFromFile.get_all_exceptions(logger, policy_type)
 
     # start to import  policies
-    print('\n List of Policies imported')
+    total_enabled_policies = len(enabled_policies)
+    print('\n Policy List include ' + str(total_enabled_policies) +  ' entries.')
+    total_exceptions_policies = len(rule_exceptions)
+    print('\n Exception List include ' + str(total_exceptions_policies) +  ' entries.')
     print('--------------------------------------------------------')
     # print total enabled policies on source fsm
-    total_enabled_policies = len(enabled_policies['enabled_policies'])
     print('\nStarting to import ' + policy_type + ' policies...')
     print('--------------------------------------------------------')
-    print('Total ' + policy_type + ' policies imported: ' + str(total_enabled_policies))
-    print('--------------------------------------------------------')
+    #print('Total ' + policy_type + ' policies imported: ' + str(total_enabled_policies))
+    #print('--------------------------------------------------------')
 
     print('Target FSM: ' + target_fsm_server)
     # get token from target fsm
@@ -92,17 +85,14 @@ def main_import():
     print('--------------------------------------------------------')
     
     
+    failed_to_import_policies = 0
+    notsupported_policies = 0
+
     target_token = get_jwt.get_access_token(target_fsm_server, tgt_user_name, tgt_user_pwd)
-    """ 
-        import policies to target_fsm, get a list of enabled policies and iterate
-        on every policy to GET the policies and rules and POST them into the target fsm,
-        print to screen, later on write to the logs. 
-    """
 
     # import polices and rules from source fsm, itterate over the list of policies and refresh token along the way
-    for i in enabled_policies['enabled_policies']:
-        notsupported_policies = 0
-        policy_name = i
+    for pn in enabled_policies['enabled_policies']:
+        policy_name = pn
 
         # check run time
         run_time = time.time() - start_time
@@ -167,12 +157,18 @@ def main_import():
             print('--------------------------------------------------------')
             common.PostPolicies.post_rule_exception(target_token, target_fsm_server, rule_exception_output, rule_name)
 
-    # print execution time in seconds
-    print('\nImporting policies completed')
-    print('--------------------------------------------------------')
 
+
+    # print execution time in seconds
+    print('\nImport task completed:')
+    print('Total policies enabled:      ' + str(total_enabled_policies))
+    print('Total policies imported:     ' + str(total_enabled_policies - notsupported_policies - failed_to_import_policies))
+    print('Total unsupported policies:  ' + str(notsupported_policies))
+    print('Total failed to import:      ' + str(failed_to_import_policies))
     format_sec = "{:.2f}".format(time.time() - start_time)
     print("Total run time: " + str(format_sec) + ' seconds')
+    print('--------------------------------------------------------')
+
 #End main_import
 
 def main():
