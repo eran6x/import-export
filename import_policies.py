@@ -5,11 +5,8 @@ import policies.
 
 """
 import argparse
-import json
-import logging
 import time
-from os import path
-import requests
+import logging
 
 import common
 
@@ -59,7 +56,6 @@ def main_import():
 
     # start to import  policies
     print('\nImporting ' + policy_type + ' Policies from local files')
-    print('--------------------------------------------------------')
 
     # get enabled policies
     enabled_policies = common.GetPoliciesFromFile.get_policy_list(logger, policy_type)
@@ -69,22 +65,21 @@ def main_import():
 
     # start to import  policies
     total_enabled_policies = len(enabled_policies)
-    print('\n Policy List include ' + str(total_enabled_policies) +  ' entries.')
+    print('Policy List include ' + str(total_enabled_policies) +  ' entries.')
     total_exceptions_policies = len(rule_exceptions)
-    print('\n Exception List include ' + str(total_exceptions_policies) +  ' entries.')
+    print('Exception List include ' + str(total_exceptions_policies) +  ' entries.')
     print('--------------------------------------------------------')
     # print total enabled policies on source fsm
-    print('\nStarting to import ' + policy_type + ' policies...')
-    print('Target FSM: ' + target_fsm_server)
+    print('\nStarting to import ' + policy_type + ' policies into target FSM: ' + target_fsm_server)
     # get token from target fsm
-    print('\nSending request to get JWT from target FSM')
+    #print('\nSending request to get JWT from target FSM')
         
     failed_to_import_policies = 0
     notsupported_policies = 0
 
     target_token = get_jwt.get_access_token(target_fsm_server, tgt_user_name, tgt_user_pwd)
-    print('--------------------------------------------------------')
 
+    print('--------------------------------------------------------')
     # import polices and rules from source fsm, itterate over the list of policies and refresh token along the way
     for pn in enabled_policies['enabled_policies']:
         policy_name = pn
@@ -99,39 +94,38 @@ def main_import():
         if policy_name == 'Email DLP Policy' or policy_name == 'Web DLP Policy':
             notsupported_policies = notsupported_policies + 1
             print(policy_name + ': Quick Policies are not supported and will not be imported')
-            print('--------------------------------------------------------')
             continue
 
         # Load and import DLP policies and rules from source fsm
         if policy_type == 'DLP':
-            print('\nLoading ' + policy_type + ' policy: ' + policy_name)
+            print('Loading ' + policy_type + ' policy: ' + policy_name)
             rules_classifiers_output = common.GetPoliciesFromFile.get_rules_classifiers(logger, policy_name)
             severity_action_output = common.GetPoliciesFromFile.get_severity_action(logger, policy_name)
             source_destination_output = common.GetPoliciesFromFile.get_source_destination(logger, policy_name)
-            print('\nImporting to FSM:' + policy_type + '  policy: ' + policy_name)
+            print('Importing to FSM:' + policy_type + '  policy: ' + policy_name)
             return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
-            if not (return_status > 200 ): # 200 OK
+            if not (return_status > 200 ): # = HTTP 200 OK
                 common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)
                 common.PostPolicies.post_source_destination(logger, target_token, target_fsm_server, source_destination_output,
                                                  policy_name)
-            else: 
-                print('\nImport ' + policy_name + ' Failed!.\nHTTP request returned with status code:' + str(return_status))
+            else: # policy import failed with other HTTP code
+                print('\nImport ' + policy_name + ' Failed!.HTTP request returned with status code:' + str(return_status))
                 print('See log for details')
                 failed_to_import_policies += 1
 
         else: # Discovery Policy
-            print('\nLoading ' + policy_type + ' policy: ' + policy_name)
+            print('Loading ' + policy_type + ' policy: ' + policy_name)
             rules_classifiers_output = common.GetPoliciesFromFile.get_rules_classifiers(logger, policy_name)
             severity_action_output = common.GetPoliciesFromFile.get_severity_action(logger, policy_name)
 
-            print('\nImporting to FSM: ' + policy_type + ' policy: ' + policy_name)
+            print('Importing to FSM: ' + policy_type + ' policy: ' + policy_name)
             return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
             if not (return_status > 200 ): # 200 OK
                 common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)
             else: 
-                print('\nImport ' + policy_name + ' Failed!.\nHTTP request returned with status code:' + str(return_status))
+                print('\nImport ' + policy_name + ' Failed!.HTTP request returned with status code:' + str(return_status))
                 print('See log for details')
-    print('--------------------------------------------------------')
+        print('--------------------------------------------------------')
 
     # import and export rule exceptions if they exist
     if len(rule_exceptions) == 0:
@@ -145,7 +139,6 @@ def main_import():
             print('\nImporting to FSM: ' + policy_type + ' policy: ' + policy_name + " exceptions:" + str(i))
             common.PostPolicies.post_rule_exception(target_token, target_fsm_server, rule_exception_output, rule_name)
 
-    print('--------------------------------------------------------')
     print('\nImport task completed:')
     print('Total policies enabled:      ' + str(total_enabled_policies))
     print('Total policies imported:     ' + str(total_enabled_policies - notsupported_policies - failed_to_import_policies))
