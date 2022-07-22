@@ -63,9 +63,10 @@ def main_import():
     # get rule exceptions
     rule_exceptions = common.GetPoliciesFromFile.get_all_exceptions(logger, policy_type)
 
+    
     # start to import  policies
-    total_enabled_policies = len(enabled_policies)
-    print('Policy List include ' + str(total_enabled_policies) +  ' entries.')
+    total_enabled_policies = enabled_policies['total_enabled_policies']
+    print('Total ' + policy_type + ' policies enabled found: ' + str(total_enabled_policies))
     total_exceptions_policies = len(rule_exceptions)
     print('Exception List include ' + str(total_exceptions_policies) +  ' entries.')
     print('--------------------------------------------------------')
@@ -102,7 +103,7 @@ def main_import():
             rules_classifiers_output = common.GetPoliciesFromFile.get_rules_classifiers(logger, policy_name)
             severity_action_output = common.GetPoliciesFromFile.get_severity_action(logger, policy_name)
             source_destination_output = common.GetPoliciesFromFile.get_source_destination(logger, policy_name)
-            print('Importing to FSM:' + policy_type + '  policy: ' + policy_name)
+            print('Importing to FSM ' + policy_type + ' policy: ' + policy_name)
             return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
             if not (return_status > 200 ): # = HTTP 200 OK
                 common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)
@@ -118,7 +119,7 @@ def main_import():
             rules_classifiers_output = common.GetPoliciesFromFile.get_rules_classifiers(logger, policy_name)
             severity_action_output = common.GetPoliciesFromFile.get_severity_action(logger, policy_name)
 
-            print('Importing to FSM: ' + policy_type + ' policy: ' + policy_name)
+            print('Importing to FSM ' + policy_type + ' policy: ' + policy_name)
             return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
             if not (return_status > 200 ): # 200 OK
                 common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)

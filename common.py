@@ -41,8 +41,6 @@ Modified @Elad's version to seperate import and export policies to files.
 """
 
 import json
-import logging
-import time
 import requests
 import urllib3
 import os
@@ -148,8 +146,8 @@ class GetPolicies:
         if (r.status_code > 200): # something bad happened
             #res = res.replace('\n',"")
             self.logger.info("Response is:" + res)
-            print('Failed to GET policy:' + policy_name)
-            print("Request returned with HTTP code" + str(r.status_code))
+            self.logger.info('Failed to GET policy:' + policy_name)
+            self.logger.info("Request returned with HTTP code:" + str(r.status_code))
             return {}
 
         policies_response = json.loads(res)
@@ -158,26 +156,6 @@ class GetPolicies:
         # TODO: should retgurn the policy as JSON in dictionary format - why are we getting a string?
 
 
-# Old GET requestssss TODO: redirect to the new policy
-
-    def get_rules_classifiers___old_version(self, source_token, source_fsm_server, policy_name):
-
-        # build the request
-        url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules?policyName={policy_name}'
-        headers = {'Authorization': f'Bearer {source_token}', 'Content-Type': 'application/json'}
-        print('GET rules and classifiers from: ' + source_fsm_server + ', policy:' + policy_name)
-        try:
-          # send api request to get the rules and classifiers
-            r = requests.get(url, headers=headers, verify=False)
-            res = r.text
-            self.logger.info("\nRaw Response is" + res)
-         
-            policies_response = json.loads(res)
-            json_format_rules_classifiers = json.dumps(policies_response, indent=4)
-            return json_format_rules_classifiers
-        except Exception:
-            print(res)
-            return {}
 
 
     def get_rules_classifiers(self, source_token, source_fsm_server, policy_name):
@@ -197,45 +175,6 @@ class GetPolicies:
         src_dst_dict = GetPolicies.get_policy_details(self, source_token, source_fsm_server, policy_name, "/source-destination")
         return src_dst_dict
 
-    def get_severity_action__old(self, source_token, source_fsm_server, policy_name):
-
-        # build the request
-        url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules/severity-action?policyName={policy_name}'
-        headers = {'Authorization': f'Bearer {source_token}', 'Content-Type': 'application/json'}
-
-        # send the api request to get rules severity and action
-        print('GET rule severity and action from: ' + source_fsm_server + ', policy:' + policy_name)
-        try:        
-            r = requests.get(url, headers=headers, verify=False)
-            res = r.text
-            self.logger.info("Raw Response is" + res)
-            policies_response = json.loads(res)
-            json_format_sev_action = json.dumps(policies_response, indent=4)
-            return json_format_sev_action
-        except Exception:
-            print('Failed to GET policy:' + policy_name)
-            print(res)
-            return {}            
-
-    def get_source_destination___old(self, source_token, source_fsm_server, policy_name):
-
-        # build the request
-        url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules/source-destination?policyName={policy_name}'
-        headers = {'Authorization': f'Bearer {source_token}', 'Content-Type': 'application/json'}
-
-        # send the api request to get source and destination
-        print('GET rule source and destination from: ' + source_fsm_server + ', policy:' + policy_name)
-        try:        
-            r = requests.get(url, headers=headers, verify=False)
-            res = r.text
-            self.logger.info("Raw Response is" + res)
-            policies_response = json.loads(res)
-            json_format_source_destination = json.dumps(policies_response, indent=4)
-            return json_format_source_destination
-        except Exception:
-            print('Failed to GET policy:' + policy_name)
-            print("Request returned with HTTP code" + str(r.status_code))
-            return {}   
 
     def get_all_exceptions(self, source_token, source_fsm_server, policy_type):
 
@@ -314,6 +253,7 @@ class GetPoliciesFromFile:
 
     def get_all_exceptions(logger, policy_type):
         ex_response = GetPoliciesFromFile.load_file_from_disk(logger, "exceptions.json")
+        #TODO: ignore missing exceptions file
         return ex_response
 
 

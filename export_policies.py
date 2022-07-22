@@ -61,14 +61,13 @@ def main_export():
     get_jwt = common.Auth(logger)
     get_policies = common.GetPolicies(logger)
 
+    notsupported_policies = 0
+    failed_to_export_policies = 0
+
     # start to  export and policies
-    print('\nExport ' + policy_type + ' Policies')
-    print('--------------------------------------------------------')
-    print('Source FSM: ' + source_fsm_server)
+    print('Exporting ' + policy_type + ' Policies from source FSM: ' + source_fsm_server)
 
     # get token from source and target fsm
-    print('\nSending requests to get JWT from source FSM')
-    print('--------------------------------------------------------')
     source_token = get_jwt.get_access_token(source_fsm_server, src_user_name, src_user_pwd)
    
     # get enabled policies
@@ -76,29 +75,23 @@ def main_export():
 
     # print total enabled policies on source fsm
     total_enabled_policies = len(enabled_policies['enabled_policies'])
-    print('\nStarting to export ' + policy_type + ' policies from FSM')
-    print('--------------------------------------------------------')
     print('Total ' + policy_type + ' policies enabled on source FSM: ' + str(total_enabled_policies))
 
     # Save policy list to disk 
-    print('\nSaving enabled policies to disk')
-    os.makedirs('json', exist_ok=True)
-    write_to_file('json/' +  'enabled_policies.json', enabled_policies)
-    print('--------------------------------------------------------')
-
+    print('Saving enabled_policies.json to disk')
+    #os.makedirs('json', exist_ok=True)
+    write_to_file('enabled_policies.json', enabled_policies)
 
     # get rule exceptions
     rule_exceptions = get_policies.get_all_exceptions(source_token, source_fsm_server, policy_type)
 
     # Save policy list to disk 
-    print('\nSaving exceptions file to disk')
-    write_to_file('json/' +  'exceptions.json', rule_exceptions)
+    print('Saving exceptions.json file to disk')
+    write_to_file('exceptions.json', rule_exceptions)
     print('--------------------------------------------------------')
 
     # export polices and rules from source fsm, itterate over the list of policies and refresh token along the way
     for i in enabled_policies['enabled_policies']:
-        notsupported_policies = 0
-        failed_to_export_policies = 0
         policy_name = i
 
         # check run time
@@ -108,20 +101,18 @@ def main_export():
             source_token = get_jwt.get_access_token(source_fsm_server, src_user_name, src_user_pwd)
             start_time = time.time()
 
+        print('\nExporting ' + policy_type + ' policy: ' + policy_name)
         if policy_name == 'Email DLP Policy' or policy_name == 'Web DLP Policy':
             notsupported_policies = notsupported_policies + 1
-            print('\nExporting ' + policy_type + ' policy: ' + policy_name)
-            print('--------------------------------------------------------')
-            print(policy_name + ' : Quick Policies are not supported and will not be exported')
+            print(policy_name + ': Quick Policies are not supported and will not be exported')
             continue
 
         # Export policies and rules from source fsm
-        print('\nExporting ' + policy_type + ' policy: ' + policy_name)
         rules_classifiers_output = get_policies.get_rules_classifiers(source_token, source_fsm_server, policy_name)
 
         # If the GET Fails them mark it and skip to the next policy. 
         if (rules_classifiers_output == {}):
-            failed_to_export_policies += 1
+            failed_to_export_policies = failed_to_export_policies + 1
             print('Failed to GET policy:' + policy_name)
             continue 
 
@@ -134,10 +125,10 @@ def main_export():
 
         # Save exported json files to disk 
         print('\nSaving ' + policy_type + '  policy: ' + policy_name)
-        write_to_file('json/' + policy_name + '_rules_classifiers.json', rules_classifiers_output)
-        write_to_file('json/' + policy_name + '_sev_action.json', severity_action_output)
+        write_to_file(policy_name + '_rules_classifiers.json', rules_classifiers_output)
+        write_to_file(policy_name + '_sev_action.json', severity_action_output)
         if policy_type == 'DLP':
-            write_to_file('json/' + policy_name + '_source_destination.json', source_destination_output)
+            write_to_file(policy_name + '_source_destination.json', source_destination_output)
         print('--------------------------------------------------------')
 
     # export rule exceptions if they exist
@@ -145,7 +136,7 @@ def main_export():
 
         # Save policy exceptions to disk 
         print('\nSaving exception list to disk')
-        write_to_file('json/' +  'exceptions.json', rule_exceptions)
+        write_to_file('exceptions.json', rule_exceptions)
         print('--------------------------------------------------------')
         
         print('\Exporting ' + policy_name + ' rule exceptions')
@@ -155,7 +146,7 @@ def main_export():
             rule_exception_output = get_policies.get_rule_exception(source_token, source_fsm_server, policy_type,rule_name)
             #f = open('json/' + policy_name + '_exception_rules.json', 'w', encoding='utf-8')
             #json.dump(rule_exception_output, f, ensure_ascii=False, indent=4)
-            write_to_file('json/' + policy_name + '_exception_rules.json', rule_exception_output)                                                             
+            write_to_file(policy_name + '_exception_rules.json', rule_exception_output)                                                             
 
     # print execution time in seconds
     print('\nExport task completed:')
@@ -169,11 +160,14 @@ def main_export():
 
 #end main export
 
-
+#write to disk on ./json subfolder
 def write_to_file(filename, data):
+    """ write filename to disk on ./json subfolder"""
     os.makedirs('json', exist_ok=True)
     # Write JSON file
-    with io.open(filename, 'w', encoding='utf8') as outfile:
+    abs_file_path = os.path.join(os.path.dirname(__file__),"json", filename)         
+
+    with io.open(abs_file_path, 'w', encoding='utf8') as outfile:
         json.dump(data, outfile, ensure_ascii=False, indent=4)
 
 def main():
