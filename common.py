@@ -292,9 +292,8 @@ class GetPoliciesFromFile:
         """ Generic function to load policy as JSON file and return the string"""
 # TODO: make relative path wotk for any OS
         logger.info("Loading file:" + file_name)
-        script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-        rel_path = "json/" + file_name
-        abs_file_path = os.path.join(script_dir, rel_path)            
+        #script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+        abs_file_path = os.path.join(os.path.dirname(__file__),"json", file_name)         
         try:
             with open(abs_file_path) as list_file:
                 #check for empty file 
@@ -357,39 +356,35 @@ class PostPolicies:
 
     def post_rules_classifiers(logger,target_token, target_fsm_server, rules_classifiers_output, policy_name):
         # post the input of: /dlp/rest/v1/policy/rules?policyName=
-        print('Push rules and classifiers to: ' + target_fsm_server + ' policy: ' + policy_name)
+        logger.info('Push rules and classifiers to: ' + target_fsm_server + ' policy: ' + policy_name)
         url = f'https://{target_fsm_server}:9443/dlp/rest/v1/policy/rules'
         headers = {'Authorization': f'Bearer {target_token}', 'Content-Type': 'application/json'}
         r = requests.post(url, headers=headers, data=rules_classifiers_output, verify=False)
-        res = r.text
-        logger.error(res)
+        logger.info("Request returned: " + str(r.status_code)) 
         return r.status_code
 
     def post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name):
         # post the input of: /dlp/rest/v1/policy/rules/severity-action?policyName=
-        print('Push rule severity and action to: ' + target_fsm_server + ' policy: ' + policy_name)
+        logger.info('Push rule severity and action to: ' + target_fsm_server + ' policy: ' + policy_name)
         url = f'https://{target_fsm_server}:9443/dlp/rest/v1/policy/rules/severity-action'
         headers = {'Authorization': f'Bearer {target_token}', 'Content-Type': 'application/json'}
         r = requests.post(url, headers=headers, data=severity_action_output, verify=False)
-        res = r.text
-        logger.error(res)
+        logger.info("Request returned: " + str(r.status_code)) 
 
     def post_source_destination(logger, target_token, target_fsm_server, source_destination_output, policy_name):
         # post the input of: /dlp/rest/v1/policy/rules/source-destination
-        print('Push rule source and destination to:  ' + target_fsm_server + ' policy: ' + policy_name)
+        logger.info('Push rule source and destination to:  ' + target_fsm_server + ' policy: ' + policy_name)
         url = f'https://{target_fsm_server}:9443/dlp/rest/v1/policy/rules/source-destination'
         headers = {'Authorization': f'Bearer {target_token}', 'Content-Type': 'application/json'}
         r = requests.post(url, headers=headers, data=source_destination_output, verify=False)
-        res = r.text
-        print(res)
+        logger.info("Request returned: " + str(r.status_code)) 
 
     def post_rule_exception(logger, target_token, target_fsm_server, rule_exception_output, rule_name):
         # post the input of: /dlp/rest/v1/policy/rules/exceptions
-        print('Push rule exception to: ' + target_fsm_server + ' rule name: ' + rule_name)
+        logger.info('Push rule exception to: ' + target_fsm_server + ' rule name: ' + rule_name)
         url = f'https://{target_fsm_server}:9443/dlp/rest/v1/policy/rules/exceptions'
         headers = {'Authorization': f'Bearer {target_token}', 'Content-Type': 'application/json'}
         r = requests.post(url, headers=headers, data=rule_exception_output, verify=False)
-        res = r.text
-        logger.error(res)
+        logger.info("Request returned: " + str(r.status_code)) 
 
 # end PostPolicies
