@@ -4,3 +4,4 @@ data.json
 *.log
 json
 tester.py
+*.7z
