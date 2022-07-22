@@ -292,7 +292,6 @@ class GetPoliciesFromFile:
         """ Generic function to load policy as JSON file and return the string"""
 # TODO: make relative path wotk for any OS
         logger.info("Loading file:" + file_name)
-        #script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
         abs_file_path = os.path.join(os.path.dirname(__file__),"json", file_name)         
         try:
             with open(abs_file_path) as list_file:
