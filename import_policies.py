@@ -105,7 +105,7 @@ def main_import():
             source_destination_output = common.GetPoliciesFromFile.get_source_destination(logger, policy_name)
             print('Importing to FSM ' + policy_type + ' policy: ' + policy_name)
             return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
-            if not (return_status > 200 ): # = HTTP 200 OK
+            if not (return_status > 201 ): # = HTTP 200 OK / 201 partial
                 common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)
                 common.PostPolicies.post_source_destination(logger, target_token, target_fsm_server, source_destination_output,
                                                  policy_name)
@@ -121,7 +121,7 @@ def main_import():
 
             print('Importing to FSM ' + policy_type + ' policy: ' + policy_name)
             return_status = common.PostPolicies.post_rules_classifiers(logger, target_token, target_fsm_server, rules_classifiers_output, policy_name)
-            if not (return_status > 200 ): # 200 OK
+            if not (return_status > 201 ): # 200 OK
                 common.PostPolicies.post_severity_action(logger, target_token, target_fsm_server, severity_action_output, policy_name)
             else: 
                 print('\nImport ' + policy_name + ' Failed!.HTTP request returned with status code:' + str(return_status))
