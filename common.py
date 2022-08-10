@@ -42,6 +42,7 @@ Modified @Elad's version to seperate import and export policies to files.
 
 import json
 import requests
+import urllib
 import urllib3
 import os
 from os import path
@@ -125,9 +126,8 @@ class GetPolicies:
             use request_type for URL manipulation
          """
         # build the request
-        #policy_name_encoded = urllib3.parse.quote(policy_name)   TODO test if we need to encode for policy name with spaces and remove if not. 
-        #url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name_encoded}'
-        url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name}'
+        policy_name_encoded = urllib.parse.quote(policy_name)
+        url = f'https://{source_fsm_server}:9443/dlp/rest/v1/policy/rules{request_type}?policyName={policy_name_encoded}'
 
         headers = {'Authorization': f'Bearer {source_token}', 'Content-Type': 'application/json'}
         self.logger.info('GET rules and classifiers from: ' + source_fsm_server + ', policy:' + policy_name + "+" + request_type)
@@ -138,7 +138,6 @@ class GetPolicies:
             self.logger.error("Timeout request for policy")
         except Exception as ex:
             print('Failed to GET policy:' + policy_name + "+" + request_type)
-            print(r)
             self.logger.error(repr(ex))
             return {} #empty dictionary
 
@@ -154,8 +153,6 @@ class GetPolicies:
         json_format_rules_classifiers = json.dumps(policies_response, indent=4)
         return json_format_rules_classifiers
         # TODO: should retgurn the policy as JSON in dictionary format - why are we getting a string?
-
-
 
 
     def get_rules_classifiers(self, source_token, source_fsm_server, policy_name):
@@ -228,10 +225,16 @@ class GetPoliciesFromFile:
     # @return - JSON/dict
     ####
     def load_file_from_disk(logger, file_name):
-        """ Generic function to load policy as JSON file and return the string"""
+        """ Generic function to load policy as JSON file and return the string
+            special characters would be replaced with a dash.
+        """
+        safe_filename = file_name.replace("/", "-")
+        safe_filename = safe_filename.replace("\\", "-")
+        safe_filename = safe_filename.replace("&", "-")
+
 # TODO: make relative path wotk for any OS
-        logger.info("Loading file:" + file_name)
-        abs_file_path = os.path.join(os.path.dirname(__file__),"json", file_name)         
+        logger.info("Loading file:" + safe_filename)
+        abs_file_path = os.path.join(os.path.dirname(__file__),"json", safe_filename)         
         try:
             with open(abs_file_path) as list_file:
                 #check for empty file 

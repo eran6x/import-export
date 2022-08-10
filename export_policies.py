@@ -121,7 +121,6 @@ def main_export():
             source_destination_output = get_policies.get_source_destination(source_token, source_fsm_server, policy_name)
         else:  # Discovery policy
             pass
-        print('--------------------------------------------------------')
 
         # Save exported json files to disk 
         print('\nSaving ' + policy_type + '  policy: ' + policy_name)
@@ -162,10 +161,16 @@ def main_export():
 
 #write to disk on ./json subfolder
 def write_to_file(filename, data):
-    """ write filename to disk on ./json subfolder"""
+    """ write filename to disk on ./json subfolder
+        any special characters in name (&,\/ will be replaced with a dash)
+    """
     os.makedirs('json', exist_ok=True)
+    safe_filename = filename.replace("/", "-")
+    safe_filename = safe_filename.replace("\\", "-")
+    safe_filename = safe_filename.replace("&", "-")
+
     # Write JSON file
-    abs_file_path = os.path.join(os.path.dirname(__file__),"json", filename)         
+    abs_file_path = os.path.join(os.path.dirname(__file__),"json", safe_filename)         
 
     with io.open(abs_file_path, 'w', encoding='utf8') as outfile:
         json.dump(data, outfile, ensure_ascii=False, indent=4)

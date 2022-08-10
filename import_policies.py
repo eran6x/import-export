@@ -38,6 +38,8 @@ def main_import():
                         default='', help='Target FSM application user password.', required=True)
     parser.add_argument('-e', '--type', nargs='?', const=1, type=str,
                         default='', help='Policy type, "DLP" or "Discovery" ', required=True)
+    #parser.add_argument('-D', '--deploy', nargs='?', const=1, type=str,
+    #                    default='', help='Policy type, "DLP" or "Discovery" ', required=False)
 
     # parse cli arguments
     args = parser.parse_args()
