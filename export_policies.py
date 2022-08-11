@@ -143,9 +143,8 @@ def main_export():
         for i in rule_exceptions['exception_rules']:
             rule_name = i['rule_name']
             rule_exception_output = get_policies.get_rule_exception(source_token, source_fsm_server, policy_type,rule_name)
-            #f = open('json/' + policy_name + '_exception_rules.json', 'w', encoding='utf-8')
-            #json.dump(rule_exception_output, f, ensure_ascii=False, indent=4)
-            write_to_file(policy_name + '_exception_rules.json', rule_exception_output)                                                             
+            write_to_file(rule_name + '_exception_rules.json', rule_exception_output)
+#            write_to_file(policy_name + '_exception_rules.json', rule_exception_output) --old
 
     # print execution time in seconds
     print('\nExport task completed:')

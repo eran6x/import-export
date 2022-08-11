@@ -108,7 +108,7 @@ class GetPolicies:
             r = requests.get(url, headers=headers, verify=False)
             res = r.text
             res = res.replace('\n',"")
-            self.logger.info(" Response is" + res)
+            #self.logger.debug(" Response is" + res)
             policies_response = json.loads(res)
             return policies_response
 
@@ -143,8 +143,7 @@ class GetPolicies:
 
         res = r.text
         if (r.status_code > 200): # something bad happened
-            #res = res.replace('\n',"")
-            self.logger.info("Response is:" + res)
+            #self.logger.debug("Response is:" + res)
             self.logger.info('Failed to GET policy:' + policy_name)
             self.logger.info("Request returned with HTTP code:" + str(r.status_code))
             return {}
@@ -282,9 +281,10 @@ class GetPoliciesFromFile:
         return response
 
     def get_rule_exception(logger, policy_name):
+        #policy_filename = policy_name + "_exception.json"
+        policy_filename = policy_name + "_exception_rules.json"
 
-        policy_filename = policy_name + "_exception.json"
-        logger.info('Import source and destination for: ' + policy_name + ' from file:' + policy_filename)
+        logger.info('Import exceptions for: ' + policy_name + ' from file:' + policy_filename)
         response = GetPoliciesFromFile.load_file_from_disk(logger, policy_filename)
         return response
 #end GetPoliciesFromFile

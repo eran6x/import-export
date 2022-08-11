@@ -137,10 +137,10 @@ def main_import():
         print('\nLoading rule exceptions')
         for i in rule_exceptions['exception_rules']:
             rule_name = i['rule_name']
-            rule_exception_output = common.GetPoliciesFromFile.get_rule_exception(policy_type, rule_name)
+            rule_exception_output = common.GetPoliciesFromFile.get_rule_exception(logger, rule_name)
 
-            print('\nImporting to FSM: ' + policy_type + ' policy: ' + policy_name + " exceptions:" + str(i))
-            common.PostPolicies.post_rule_exception(target_token, target_fsm_server, rule_exception_output, rule_name)
+            print('\nImporting to FSM ' + policy_type + ' policy [' + policy_name + "] exceptions")# + str(i))
+            common.PostPolicies.post_rule_exception(logger,target_token, target_fsm_server, rule_exception_output, rule_name)
 
     print('\nImport task completed:')
     print('Total policies enabled:      ' + str(total_enabled_policies))
