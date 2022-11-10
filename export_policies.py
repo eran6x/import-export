@@ -161,10 +161,11 @@ def main_export():
 #write to disk on ./json subfolder
 def write_to_file(filename, data):
     """ write filename to disk on ./json subfolder
-        any special characters in name (&,\/ will be replaced with a dash)
+        any special characters in name (&,\/| will be replaced with a dash)
     """
     os.makedirs('json', exist_ok=True)
     safe_filename = filename.replace("/", "-")
+    safe_filename = safe_filename.replace("|", "-")
     safe_filename = safe_filename.replace("\\", "-")
     safe_filename = safe_filename.replace("&", "-")
 
